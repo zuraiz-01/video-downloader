@@ -1,6 +1,6 @@
 {
-    "name": "video_dd",
-    "short_name": "video_dd",
+    "name": "video_downloader",
+    "short_name": "video_downloader",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:video_dd/main.dart';
+import 'package:video_downloader/main.dart';
 
 void main() {
-  testWidgets('app loads base downloader screen', (tester) async {
+  testWidgets('video downloader home screen loads', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const MyApp());
-    expect(find.text('All In One Video Downloader'), findsOneWidget);
-    expect(find.byType(TextField), findsOneWidget);
-    expect(find.text('Analyze'), findsOneWidget);
+
+    expect(find.text('Video Downloader'), findsOneWidget);
+    expect(find.text('Paste video link'), findsOneWidget);
+    expect(find.byIcon(Icons.light_mode_rounded), findsOneWidget);
   });
 }

@@ -1,23 +1,16 @@
-# Video Downloader Hub
+# video_downloader
 
-Simple Flutter downloader app built with GetX.
+A new Flutter project.
 
-## Features
+## Getting Started
 
-- YouTube, Facebook, Twitter/X, Instagram, TikTok, and direct link support
-- Quality selection + progress bar
-- Download with retry headers
+This project is a starting point for a Flutter application.
 
-## Tech Stack
+A few resources to get you started if this is your first Flutter project:
 
-- Flutter
-- GetX
-- Dio
-- youtube_explode_dart
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-## Run
-
-```bash
-flutter pub get
-flutter run
-```
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.

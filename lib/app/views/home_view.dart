@@ -1,414 +1,663 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../controllers/download_controller.dart';
-import '../models/video_models.dart';
+import '../controllers/home_controller.dart';
 
-class HomeView extends GetView<DownloadController> {
+class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
 
-  static const _spinner = SizedBox(
-    width: 16,
-    height: 16,
-    child: CircularProgressIndicator(strokeWidth: 2),
-  );
-
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('All In One Video Downloader')),
-    body: DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFF8F2E6), Color(0xFFEFE4CE), Color(0xFFE4D7BC)],
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -110,
-            right: -50,
-            child: _glow(280, const Color(0x33B8903D)),
-          ),
-          Positioned(
-            bottom: -130,
-            left: -80,
-            child: _glow(320, const Color(0x22143A52)),
-          ),
-          SafeArea(
-            child: Obx(() {
-              final c = controller;
-              final info = c.videoInfo.value;
-              final busy = c.isAnalyzing.value || c.isDownloading.value;
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final dark = controller.isDark.value;
+      final colors = Theme.of(context).colorScheme;
 
-              return Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 940),
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-                    children: [
-                      _reveal(0, _hero(context)),
-                      const SizedBox(height: 14),
-                      _reveal(1, _inputPanel(context, c, busy)),
-                      const SizedBox(height: 14),
-                      _reveal(2, _notice()),
-                      _message(
-                        order: 3,
-                        text: c.errorMessage.value,
-                        bg: const Color(0xFFFBE8E8),
-                        border: const Color(0xFFE9B3B3),
-                        fg: const Color(0xFF8C1E1E),
-                        icon: Icons.error_outline_rounded,
-                      ),
-                      _message(
-                        order: 4,
-                        text: c.statusMessage.value,
-                        bg: const Color(0xFFE7F6EE),
-                        border: const Color(0xFFB3DEC3),
-                        fg: const Color(0xFF0E6A39),
-                        icon: Icons.check_circle_outline_rounded,
-                      ),
-                      if (info != null) ...[
-                        const SizedBox(height: 14),
-                        _reveal(5, _videoPanel(context, c, info)),
-                      ],
+      return Scaffold(
+        body: AnimatedContainer(
+          duration: const Duration(milliseconds: 350),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: dark
+                  ? const [
+                      Color(0xFF070B14),
+                      Color(0xFF11192B),
+                      Color(0xFF18243B),
+                    ]
+                  : const [
+                      Color(0xFFF8FBFF),
+                      Color(0xFFEAF2FF),
+                      Color(0xFFFFFFFF),
                     ],
-                  ),
-                ),
-              );
-            }),
+            ),
           ),
-        ],
-      ),
-    ),
-  );
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _topBar(colors, dark),
+                  const SizedBox(height: 22),
+                  _heroCard(colors, dark),
+                  const SizedBox(height: 20),
+                  _inputCard(colors, dark),
+                  const SizedBox(height: 18),
+                  _platformRow(colors, dark),
+                  const SizedBox(height: 18),
+                  _resultCard(colors, dark),
+                  const SizedBox(height: 18),
+                  _recentCard(colors, dark),
+                  const SizedBox(height: 18),
+                  _messageCard(colors, dark),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
 
-  Widget _hero(BuildContext context) => _panel(
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _topBar(ColorScheme colors, bool dark) {
+    return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(11),
+          width: 54,
+          height: 54,
           decoration: BoxDecoration(
-            color: const Color(0xFF143A52),
-            borderRadius: BorderRadius.circular(13),
+            borderRadius: BorderRadius.circular(18),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF4ADEDE), Color(0xFF3B82F6)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF3B82F6).withValues(alpha: 0.35),
+                blurRadius: 22,
+                offset: const Offset(0, 12),
+              ),
+            ],
           ),
-          child: const Icon(
-            Icons.workspace_premium_rounded,
-            color: Colors.white,
-          ),
+          child: const Icon(Icons.arrow_downward_rounded, color: Colors.white),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Download Lounge',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: const Color(0xFF112E42),
-                  height: 1.05,
-                ),
+                'Video Downloader',
+                style: Theme.of(Get.context!).textTheme.headlineSmall,
               ),
-              const SizedBox(height: 8),
               Text(
-                'Paste YouTube, Facebook, Twitter/X, Instagram, TikTok, or direct media link. Pick quality and download with live progress.',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: const Color(0xFF324A59)),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-    gradient: const LinearGradient(
-      colors: [Color(0xEBFFFFFF), Color(0xD8FFF8EA)],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    ),
-  );
-
-  Widget _inputPanel(BuildContext context, DownloadController c, bool busy) =>
-      _panel(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Video URL',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(color: const Color(0xFF17364A)),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: c.linkController,
-              enabled: !busy,
-              decoration: const InputDecoration(
-                labelText: 'Video / Reel URL',
-                hintText: 'https://...',
-              ),
-              onSubmitted: (_) => c.analyze(),
-            ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: busy ? null : c.analyze,
-              icon: c.isAnalyzing.value
-                  ? _spinner
-                  : const Icon(Icons.search_rounded),
-              label: Text(c.isAnalyzing.value ? 'Analyzing...' : 'Analyze'),
-            ),
-          ],
-        ),
-      );
-
-  Widget _notice() => _panel(
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Icon(Icons.info_outline_rounded, color: Color(0xFF8D6B2A)),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            'Public links usually work. Private posts or heavily protected streams can fail without API/auth access.',
-            style: TextStyle(
-              color: Colors.orange.shade900,
-              fontWeight: FontWeight.w600,
-              height: 1.35,
-            ),
-          ),
-        ),
-      ],
-    ),
-    gradient: const LinearGradient(
-      colors: [Color(0xF9FFF6DF), Color(0xF5FFF1CC)],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    ),
-  );
-
-  Widget _message({
-    required int order,
-    required String? text,
-    required Color bg,
-    required Color border,
-    required Color fg,
-    required IconData icon,
-  }) {
-    final value = text ?? '';
-    if (value.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: _reveal(
-        order,
-        _panel(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: fg),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    color: fg,
-                    fontWeight: FontWeight.w700,
-                    height: 1.35,
-                  ),
+                'Simple code, premium screen',
+                style: Theme.of(Get.context!).textTheme.bodyMedium?.copyWith(
+                  color: dark
+                      ? Colors.white.withValues(alpha: 0.7)
+                      : colors.onSurface.withValues(alpha: 0.65),
                 ),
               ),
             ],
           ),
-          color: bg,
-          borderColor: border,
         ),
+        InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: controller.changeTheme,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: dark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : colors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: dark
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : colors.primary.withValues(alpha: 0.15),
+              ),
+            ),
+            child: Icon(
+              dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              color: dark ? Colors.white : colors.primary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _heroCard(ColorScheme colors, bool dark) {
+    return _glassCard(
+      dark: dark,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: const Color(0xFF22C55E).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: const Text(
+              'Instagram, TikTok, Facebook, YouTube, X',
+              style: TextStyle(
+                color: Color(0xFF22C55E),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Ek link dalo aur stylish preview ke saath download karo.',
+            style: Theme.of(Get.context!).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'App intentionally seedhi rakhi gayi hai. GetX state, clean cards, aur platform packages direct use ho rahe hain.',
+            style: Theme.of(Get.context!).textTheme.bodyLarge?.copyWith(
+              color: dark
+                  ? Colors.white.withValues(alpha: 0.72)
+                  : colors.onSurface.withValues(alpha: 0.72),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _videoPanel(
-    BuildContext context,
-    DownloadController c,
-    VideoInfo info,
-  ) {
-    final isDownloading = c.isDownloading.value;
-    final disabled = isDownloading || c.selectedFormat == null;
-    return _panel(
+  Widget _inputCard(ColorScheme colors, bool dark) {
+    return _glassCard(
+      dark: dark,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            info.title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(color: const Color(0xFF132F42)),
+            'Paste video link',
+            style: Theme.of(Get.context!).textTheme.titleLarge,
           ),
-          const SizedBox(height: 8),
-          Chip(
-            label: Text(info.platform.label),
-            avatar: const Icon(Icons.language_rounded, size: 16),
+          const SizedBox(height: 12),
+          TextField(
+            controller: controller.linkController,
+            minLines: 2,
+            maxLines: 3,
+            style: TextStyle(
+              color: dark ? Colors.white : colors.onSurface,
+              fontSize: 15,
+            ),
+            decoration: InputDecoration(
+              hintText: 'https://www.instagram.com/reel/... ya YouTube link',
+              hintStyle: TextStyle(
+                color: dark
+                    ? Colors.white.withValues(alpha: 0.35)
+                    : colors.onSurface.withValues(alpha: 0.4),
+              ),
+              filled: true,
+              fillColor: dark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : colors.primary.withValues(alpha: 0.04),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+            ),
           ),
-          const SizedBox(height: 10),
-          _thumbnail(info.thumbnailUrl),
           const SizedBox(height: 14),
-          Text(
-            'Available Qualities',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(color: const Color(0xFF17364A)),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            key: ValueKey(c.selectedFormatId.value),
-            initialValue: c.selectedFormatId.value,
-            isExpanded: true,
-            icon: const Icon(Icons.expand_more_rounded),
-            items: [
-              for (final f in info.formats)
-                DropdownMenuItem(
-                  value: f.id,
-                  child: Text(
-                    f.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: controller.pasteLink,
+                  icon: const Icon(Icons.content_paste_go_rounded),
+                  label: const Text('Paste'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: controller.isLoading.value
+                      ? null
+                      : controller.getVideo,
+                  icon: controller.isLoading.value
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.auto_awesome_rounded),
+                  label: Text(
+                    controller.isLoading.value ? 'Checking' : 'Get Video',
                   ),
                 ),
+              ),
             ],
-            onChanged: c.isDownloading.value ? null : c.pickFormat,
-            decoration: InputDecoration(
-              labelText: 'Resolution',
-              hintText: 'Select quality',
-              prefixIcon: const Icon(Icons.hd_rounded),
-              filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.74),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFD4C39F)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFD4C39F)),
-              ),
-            ),
           ),
-          if (c.selectedFormat != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              c.selectedFormat!.hasAudio
-                  ? 'Selected: ${c.selectedFormat!.quality} (${c.selectedFormat!.container.toUpperCase()})'
-                  : 'Selected: ${c.selectedFormat!.quality} (video only)',
-              style: const TextStyle(
-                color: Color(0xFF5B4A2A),
-                fontWeight: FontWeight.w700,
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _demoChip(
+                'Instagram demo',
+                'https://www.instagram.com/reel/sample',
               ),
-            ),
-          ],
-          const SizedBox(height: 14),
-          if (isDownloading)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                value: c.progress.value,
-                minHeight: 9,
-                color: const Color(0xFF143A52),
-                backgroundColor: const Color(0xFFDCC9A3),
+              _demoChip(
+                'TikTok demo',
+                'https://www.tiktok.com/@user/video/123',
               ),
-            ),
-          const SizedBox(height: 14),
-          FilledButton.icon(
-            onPressed: disabled ? null : c.downloadSelected,
-            icon: isDownloading ? _spinner : const Icon(Icons.download_rounded),
-            label: Text(isDownloading ? 'Downloading...' : 'Download'),
+              _demoChip(
+                'YouTube demo',
+                'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+              ),
+            ],
           ),
         ],
       ),
-      gradient: const LinearGradient(
-        colors: [Color(0xEAFFFFFF), Color(0xDDFCF6E8)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
     );
   }
 
-  Widget _thumbnail(String? url) {
-    if (url == null || url.isEmpty) {
-      return _thumbBox(const Icon(Icons.ondemand_video_rounded, size: 40));
-    }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Image.network(
-          url,
-          fit: BoxFit.cover,
-          errorBuilder: (_, error, stackTrace) =>
-              _thumbBox(const Icon(Icons.broken_image_rounded, size: 40)),
+  Widget _platformRow(ColorScheme colors, bool dark) {
+    final items = ['Insta', 'TikTok', 'Facebook', 'YouTube', 'X'];
+
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: items.map((item) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          decoration: BoxDecoration(
+            color: dark
+                ? Colors.white.withValues(alpha: 0.06)
+                : colors.surface.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: dark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : colors.primary.withValues(alpha: 0.08),
+            ),
+          ),
+          child: Text(
+            item,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: dark ? Colors.white : colors.onSurface,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _resultCard(ColorScheme colors, bool dark) {
+    return Obx(() {
+      final video = controller.currentVideo.value;
+
+      return AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        child: video == null
+            ? _glassCard(
+                dark: dark,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.video_collection_rounded,
+                        size: 44,
+                        color: dark
+                            ? Colors.white.withValues(alpha: 0.85)
+                            : colors.primary,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Preview yahan show hoga',
+                        style: Theme.of(Get.context!).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Link check karne ke baad thumbnail, title aur download button show hoga.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(Get.context!).textTheme.bodyMedium
+                            ?.copyWith(
+                              color: dark
+                                  ? Colors.white.withValues(alpha: 0.65)
+                                  : colors.onSurface.withValues(alpha: 0.65),
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : _glassCard(
+                dark: dark,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: video.thumbnail.isEmpty
+                            ? Container(
+                                color: dark
+                                    ? Colors.white.withValues(alpha: 0.06)
+                                    : colors.primary.withValues(alpha: 0.08),
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  Icons.play_circle_fill_rounded,
+                                  size: 72,
+                                  color: dark ? Colors.white : colors.primary,
+                                ),
+                              )
+                            : Image.network(
+                                video.thumbnail,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: dark
+                                        ? Colors.white.withValues(alpha: 0.06)
+                                        : colors.primary.withValues(
+                                            alpha: 0.08,
+                                          ),
+                                    alignment: Alignment.center,
+                                    child: Icon(
+                                      Icons.broken_image_outlined,
+                                      size: 54,
+                                      color: dark
+                                          ? Colors.white70
+                                          : colors.primary,
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _infoPill(video.platform, const Color(0xFF3B82F6)),
+                        _infoPill(
+                          controller.selectedFormat?.title ?? video.qualityText,
+                          const Color(0xFF22C55E),
+                        ),
+                        _infoPill(video.author, const Color(0xFFF97316)),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      video.title,
+                      style: Theme.of(Get.context!).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      video.note,
+                      style: Theme.of(Get.context!).textTheme.bodyMedium
+                          ?.copyWith(
+                            color: dark
+                                ? Colors.white.withValues(alpha: 0.7)
+                                : colors.onSurface.withValues(alpha: 0.68),
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (video.formats.isNotEmpty) ...[
+                      Text(
+                        'Choose Resolution',
+                        style: Theme.of(Get.context!).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 10),
+                      DropdownButtonFormField<String>(
+                        initialValue: controller.selectedFormatId.value.isEmpty
+                            ? video.formats.first.id
+                            : controller.selectedFormatId.value,
+                        items: video.formats.map((item) {
+                          return DropdownMenuItem<String>(
+                            value: item.id,
+                            child: Text(item.title),
+                          );
+                        }).toList(),
+                        onChanged: controller.changeFormat,
+                        dropdownColor: dark
+                            ? const Color(0xFF18243B)
+                            : Colors.white,
+                        iconEnabledColor: dark ? Colors.white : colors.primary,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: dark
+                              ? Colors.white.withValues(alpha: 0.05)
+                              : colors.primary.withValues(alpha: 0.04),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    controller.isDownloading.value
+                        ? Column(
+                            children: [
+                              LinearProgressIndicator(
+                                value: controller.progress.value == 0
+                                    ? null
+                                    : controller.progress.value,
+                                minHeight: 10,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                '${(controller.progress.value * 100).toStringAsFixed(0)}% downloading',
+                                style: Theme.of(
+                                  Get.context!,
+                                ).textTheme.bodyMedium,
+                              ),
+                            ],
+                          )
+                        : SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: controller.downloadVideo,
+                              icon: const Icon(Icons.download_rounded),
+                              label: const Text('Download Now'),
+                            ),
+                          ),
+                  ],
+                ),
+              ),
+      );
+    });
+  }
+
+  Widget _recentCard(ColorScheme colors, bool dark) {
+    return Obx(() {
+      if (controller.recentItems.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      return _glassCard(
+        dark: dark,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Recent previews',
+              style: Theme.of(Get.context!).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 12),
+            ...controller.recentItems.map(
+              (video) => InkWell(
+                onTap: () => controller.openRecent(video),
+                borderRadius: BorderRadius.circular(18),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: dark
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : colors.primary.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(
+                            0xFF3B82F6,
+                          ).withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(Icons.movie_creation_outlined),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              video.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${video.platform} • ${video.qualityText}',
+                              style: TextStyle(
+                                color: dark
+                                    ? Colors.white.withValues(alpha: 0.65)
+                                    : colors.onSurface.withValues(alpha: 0.65),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ),
-    );
+      );
+    });
   }
 
-  Widget _thumbBox(Widget child) => Container(
-    height: 180,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: const Color(0xFFD4C39F)),
-      color: Colors.white.withValues(alpha: 0.7),
-    ),
-    child: child,
-  );
+  Widget _messageCard(ColorScheme colors, bool dark) {
+    return Obx(() {
+      final hasMessage = controller.message.value.isNotEmpty;
+      final hasPath = controller.savedPath.value.isNotEmpty;
 
-  Widget _panel({
-    required Widget child,
-    Color? color,
-    Color borderColor = const Color(0xFFD8C8A6),
-    Gradient? gradient,
-  }) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: color ?? const Color(0xEFFFFFFF),
+      if (!hasMessage && !hasPath) {
+        return const SizedBox.shrink();
+      }
+
+      return _glassCard(
+        dark: dark,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (hasMessage)
+              Text(
+                controller.message.value,
+                style: Theme.of(Get.context!).textTheme.bodyLarge,
+              ),
+            if (hasPath) ...[
+              const SizedBox(height: 10),
+              Text(
+                'Saved at:\n${controller.savedPath.value}',
+                style: Theme.of(Get.context!).textTheme.bodyMedium?.copyWith(
+                  color: dark
+                      ? Colors.white.withValues(alpha: 0.72)
+                      : colors.onSurface.withValues(alpha: 0.72),
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+            Text(
+              'Note: X videos ke liye `twitter_keys.dart` me bearer token chahiye.',
+              style: Theme.of(Get.context!).textTheme.bodySmall?.copyWith(
+                color: dark
+                    ? Colors.white.withValues(alpha: 0.55)
+                    : colors.onSurface.withValues(alpha: 0.55),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _demoChip(String text, String link) {
+    return InkWell(
+      onTap: () => controller.fillDemo(link),
       borderRadius: BorderRadius.circular(22),
-      border: Border.all(color: borderColor, width: 1.1),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x1A000000),
-          blurRadius: 24,
-          offset: Offset(0, 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
         ),
-      ],
-      gradient: gradient,
-    ),
-    child: Padding(padding: const EdgeInsets.all(16), child: child),
-  );
-
-  Widget _reveal(int order, Widget child) => TweenAnimationBuilder<double>(
-    duration: Duration(milliseconds: 380 + (order * 90)),
-    curve: Curves.easeOutCubic,
-    tween: Tween(begin: 0, end: 1),
-    builder: (context, value, item) => Opacity(
-      opacity: value,
-      child: Transform.translate(
-        offset: Offset(0, (1 - value) * 18),
-        child: item,
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: Color(0xFF3B82F6),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
-    ),
-    child: child,
-  );
+    );
+  }
 
-  static Widget _glow(double size, Color color) => IgnorePointer(
-    child: Container(
-      width: size,
-      height: size,
+  Widget _infoPill(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [color, Colors.transparent],
-          radius: 0.82,
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: color, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+
+  Widget _glassCard({required Widget child, required bool dark}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(30),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: dark
+                ? Colors.white.withValues(alpha: 0.07)
+                : Colors.white.withValues(alpha: 0.82),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: dark
+                  ? Colors.white.withValues(alpha: 0.11)
+                  : Colors.white.withValues(alpha: 0.95),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: dark ? 0.18 : 0.05),
+                blurRadius: 30,
+                offset: const Offset(0, 18),
+              ),
+            ],
+          ),
+          child: child,
         ),
       ),
-    ),
-  );
+    );
+  }
 }
